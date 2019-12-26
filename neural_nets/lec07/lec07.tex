@@ -1,0 +1,480 @@
+\documentclass[twoside]{article}
+
+\usepackage{amsmath,amsthm,amssymb,epsfig}
+
+\theoremstyle{definition}
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{cor}[thm]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem*{defn}{Definition}
+\newtheorem*{exmp}{Example}
+\newtheorem*{problem}{Problem}
+
+\theoremstyle{remark}
+\newtheorem*{rem}{Remark}
+\newtheorem*{note}{Note}
+\newtheorem*{exer}{Exercise}
+
+\setlength{\oddsidemargin}{0.25 in}
+\setlength{\evensidemargin}{-0.25 in}
+\setlength{\topmargin}{-0.6 in}
+\setlength{\textwidth}{6.5 in}
+\setlength{\textheight}{8.5 in}
+\setlength{\headsep}{0.75 in}
+\setlength{\parindent}{0 in}
+\setlength{\parskip}{0.1 in}
+
+\DeclareMathOperator{\var}{var}
+\newcommand{\widgraph}[2]{\includegraphics[keepaspectratio,width=#1]{#2}}
+\newcommand{\widgraphr}[3]{\includegraphics[keepaspectratio,width=#1,angle=#3]{#2}}
+
+\newcommand{\lecture}[4]{
+   \pagestyle{myheadings}
+   \thispagestyle{plain}
+   \newpage
+   \setcounter{page}{1}
+   \noindent
+   \begin{center}
+   \framebox{
+      \vbox{\vspace{2mm}
+    \hbox to 6.28in { {\bf S\&DS 671 (Spring 2019) Selected Topics in Neural Nets \hfill Lecture: #4} }
+       \vspace{6mm}
+       \hbox to 6.28in { {\hfill #1  \hfill} }
+       \vspace{6mm}
+       \hbox to 6.28in { {\it Lecturer: #2 \hfill Scribe: #3} }
+      \vspace{2mm}}
+   }
+   \end{center}
+   \markboth{#1}{#1}
+   \vspace*{4mm}
+}
+
+
+%%%%%%%
+% Some commonly used notation
+%%%%%%%
+
+\def\R{{\mathbb R}}
+\def\X{{\mathcal X}}
+\def\Y{{\mathcal Y}}
+\def\E{{\mathbb E}}
+\def\sign{{\rm sign}}
+\newcommand{\prob}{\ensuremath{\mathbb{P}}}
+
+\newcommand{\percent}{$\%$}
+
+\begin{document}
+
+
+%% SOME RULES
+%% - only use pdfLaTeX to compile!!
+%% - for aligned equations, use align, do NOT use eqnarray
+%% - for unreferenced displayed math, use \[\] and do not number them
+%% - for labeling, use the following convention
+%%          theorem: 			\label{thm:fermat}
+%%          definition: 	\label{def:entropy}
+%%          lemma: 				\label{lmm:fermat}
+%%          proposition: 	\label{prop:fermat}, etc
+
+ 
+%% lecture starts below
+%% 1. title (short summary of the content)
+%% 2. lecturer name
+%% 3. scribe name (that is you) and date of lecture
+%% 4. lecture number (also name the file accordingly like lec01.tex)
+\lecture{Towards Understanding the Role of Over-Parametrization in Generalization of Neural Networks}{Harrison Zhou}{Cynthia Yue, Feb 27, 2019}{7}
+%%%%%%%%%%%%%%%%%%%%%%%%%scribe^name^here%%^lecture number
+
+\section{Introduction}
+
+In their 2018 paper \textit{Towards Understanding the Role of Over-Parametrization in Generalization of Neural Networks}, Neyshabur et al. introduce a way to understand why neural networks generalize better with over-parametrization. They show that the difference between test and training error keeps decreasing as the number of parameters is increased. Specifically, they find tighter upper and lower bounds for the difference between test and training error. To do this, they involve the Rademacher complexity in their upper bound and are able to find a matching lower bound for the Rademacher complexity, therefore showing not only that this complexity decreases to 0 but also the speed at which it decreases.
+
+They prove these bounds for the particular model of a two layer ReLU network, where $\text{V} \in \mathbb{R}^{1 \text{x} h}$, $\text{U} \in \mathbb{R}^{h \text{x} d}$, and $\text{x} \in \mathbb{R}^{d \text{x} 1}$:
+\[
+\begin{aligned}
+f_\text{V,U}(\text{x})&=\text{V}[\text{Ux}]_+ \\
+&= \begin{smallmatrix}(v_1 & \cdots & v_h)\end{smallmatrix}
+(\left(\begin{smallmatrix}U_1 \\ U_2 \\ \vdots \\ U_h\end{smallmatrix}\right)
+\text{x})_+.
+\end{aligned}
+\]
+They consider using this network for the classification task with data $(x_i, y_i)$ i.i.d. with $i = 1,\ldots,m$ where the label $y_i = \pm1$. For this classification, they use the loss function of ramp loss:
+\[
+l(f(\text{x}),y) = \begin{cases}
+0 & f(\text{x})y \geq 1 \\
+1-f(\text{x})y & 0 \leq f(\text{x})y \leq 1 \\
+1 & f(\text{x})y < 0.
+\end{cases}
+\]
+They have expected loss $L(f(\text{x}),y) = \mathbb{E}(l(f(\text{x}),y))$ and empirical loss $\hat L(f(\text{x}),y) = \frac{1}{m}\sum\limits_{i=1}^m l(f(\text{x}_i),y_i)$.
+
+When finding bounds for the difference between test and training error, they look at the difference between test error $L(f(\text{x}),y)$ and training error $\hat L(f(\text{x}),y)$: $L(f(\text{x}),y) - \hat L(f(\text{x}),y)$.
+
+\section{Upper Bound}
+
+For the upper bound, they find the bound with respect to the following parameter space:
+\[
+\mathcal{W} = \{ (\text{V,U}) : \|\text{v}_j\| \leq \alpha_j , \|\text{u}_j - \text{u}_j^0\|_2 \leq \beta_j \}.
+\]
+
+The upper bound for this parameter space is found to be:
+\begin{equation}
+L(f(\text{x}),y) - \hat L(f(\text{x}),y) \lesssim \frac{1}{m} \sum\limits_{j=1}^h \alpha_j (\beta_j \| \text{X} \|_F + \| \text{u}_j^0 \text{X} \|_2) + \sqrt\frac{\log \frac{2}{s}}{m}.
+\end{equation}
+
+In order to find this upper bound, there are two parts. We first show that the the difference between test and training error is bounded above by the Rademacher complexity. We then show that the Rademacher complexity is bounded above by (1).
+
+\subsection{Difference between test and training error bounded above by Rademacher complexity}
+
+In order to show $L(f(\text{x}),y) - \hat L(f(\text{x}),y) \lesssim \frac{1}{m} \sum\limits_{j=1}^h \alpha_j (\beta_j \| \text{X} \|_F + \| \text{u}_j^0 \text{X} \|_2) + \sqrt\frac{\log \frac{2}{s}}{m}$ (1), we first need to show that the difference between test and training error is bounded above by the Rademacher complexity:
+\begin{equation}
+L(f(\text{x}),y) - \hat L(f(\text{x}),y) \lesssim \frac{1}{m} \mathbb{E} \sup \limits_l \sum\limits_{i=1}^m \xi_i l(f(\text{x}_i),y_i) + \sqrt\frac{\log \frac{2}{s}}{m},
+\end{equation}
+where $\frac{1}{m} \mathbb{E} \sup \limits_l \sum\limits_{i=1}^m \xi_i l(f(\text{x}_i),y_i)$ is the Rademacher complexity, denoted $\mathcal{R}$, with $\xi$ i.i.d. $= \begin{cases} 1 & \text{w.p. } \frac{1}{2} \\ -1 & \text{w.p. } \frac{1}{2}. \end{cases}$
+
+\subsubsection*{Using a theorem about Rademacher complexity \cite[Theorem~3.3]{foundations}:}
+
+To do this, we first need the following theorem:
+\[
+\begin{aligned}
+\mathbb{E} g(z) \leq \frac{1}{m} \sum \limits_{i=1}^m g(z_i) + 2 \mathcal{R}_m(\mathcal{G}) + \sqrt\frac{\log \frac{1}{\delta}}{2m} \\
+\text{where} \; \mathcal{R}_m(\mathcal{G}) = \frac{1}{m} \mathbb{E} \sup \limits_{g\in\mathcal{G}} \sum \limits_{i=1}^m \xi_i g(z_i).
+\end{aligned}
+\]
+
+Let us prove this. However, the proof involves an inequality called McDiarmid's inequality, so before we prove this, let us briefly discuss McDiarmid's inequality \cite{hoeffdingmcdiarmid}.
+
+McDiarmid's inequality is a concentration inequality. Concentration inequalities are used when we want to show that some random quantity is close to its mean with high probability \cite{concentration}. Some examples of concentration inequalities are Markov's inequality, which states that, for $Z \geq 0$ and $\epsilon > 0, \mathbb{P}(Z > \epsilon) \leq \frac{\mathbb{E}(Z)}{\epsilon}$, and Chebyshev's inequality, which states that $\mathbb{P}(|Z - \mathbb{E}Z| > \epsilon) \leq \frac{\text{Var}(Z)}{\epsilon^2}$. McDiarmid's inequality is stronger.
+
+McDiarmid's inequality states: For $Z_1, \ldots, Z_m$ independent random variables and $i = 1,\ldots,m$, suppose we have a function $f$ that satisfies
+\[
+\sup \limits_{z_1, \ldots, z_m, z_i'} \Bigg| f(z_1,\ldots,z_{i-1}, z_i, z_{i+1}, \ldots, z_m) - f(z_1, \ldots, z_{i-1}, z_i', z_{i+1}, \ldots, z_m)\Bigg| \leq c_i.
+\]
+Then
+\[
+\mathbb{P}\Bigg( \Big| f(Z_1,\ldots,Z_m) - \mathbb{E}(f(Z_1,\ldots,Z_m)) \Big| \geq \epsilon \Bigg) \leq 2\exp \bigg(-\frac{2\epsilon^2}{\sum \limits_{i=1}^m c_i^2} \bigg).
+\]
+
+Now, let us use McDiarmid's inequality to actually prove the theorem about Rademacher complexity:
+
+\begin{proof}
+
+For any sample $S = (z_1,\ldots,z_m)$ and any $g\in\mathcal{G}$, we first choose function $f$ to be
+\[
+f(S) = \sup \limits_{g\in\mathcal{G}} \bigg( \mathbb{E}[g] - \hat{\mathbb{E}}_S[g] \bigg).
+\]
+
+Now, let us have two samples $S$ and $S'$, which differ by exactly one point, say $z_m$ in $S$ and $z_m'$ in $S'$. Then,
+\[
+\begin{aligned}
+f(S') - f(S) &\leq \sup \limits_{g\in\mathcal{G}} \bigg( \hat{\mathbb{E}}_S[g] - \hat{\mathbb{E}}_{S'}[g] \bigg) \\
+&= \sup \limits_{g\in\mathcal{G}} \frac{g(z_m) - g(z_m')}{m} \\
+&\leq \frac{1}{m}.
+\end{aligned}
+\]
+
+We can similarly show that $f(S) - f(S') \leq \frac{1}{m}$, which indicates that $| f(S) - f(S') | \leq \frac{1}{m}$. As a result, the $c_i$ in $\sup \limits_{z_1, \ldots, z_m, z_i'} \Bigg| f(z_1,\ldots,z_{i-1}, z_i, z_{i+1}, \ldots, z_m) - f(z_1, \ldots, z_{i-1}, z_i', z_{i+1}, \ldots, z_m)\Bigg| \leq c_i$ can be considered to be $\frac{1}{m}$.
+
+We can now apply McDiarmid's inequality to get: for any $\delta > 0$, with probability at least $1 - \delta / 2$,
+\[
+f(S) \leq \underset{S}{\mathbb{E}} [f(S)] + \sqrt \frac{\log \frac{2}{\delta}}{2m}.
+\]
+
+From here, let's break down the expectation on the right-hand side:
+\[
+\begin{aligned}
+\underset{S}{\mathbb{E}} [f(S)] &= \underset{S}{\mathbb{E}} \bigg[ \sup \limits_{g\in\mathcal{G}} ( \mathbb{E}[g] - \hat{\mathbb{E}}_S(g)) \bigg] \\
+&= \underset{S}{\mathbb{E}} \bigg[ \sup \limits_{g\in\mathcal{G}} \underset{S'}{\mathbb{E}} [\hat{\mathbb{E}}_{S'}(g) - \hat{\mathbb{E}}_S(g)] \bigg] \\
+&\leq \underset{S,S'}{\mathbb{E}} \bigg[ \sup \limits_{g\in\mathcal{G}} (\hat{\mathbb{E}}_{S'}(g) - \hat{\mathbb{E}}_S(g)) \bigg] \\
+&= \underset{S,S'}{\mathbb{E}} \bigg[ \sup \limits_{g\in\mathcal{G}} \frac{1}{m} \sum \limits_{i=1}^m (g(z_i') - g(z_i)) \bigg] \\
+&= \underset{\sigma,S,S'}{\mathbb{E}} \bigg[ \sup \limits_{g\in\mathcal{G}} \frac{1}{m} \sum \limits_{i=1}^m \sigma_i(g(z_i') - g(z_i)) \bigg] \\
+&\leq \underset{\sigma,S'}{\mathbb{E}} \bigg[ \sup \limits_{g\in\mathcal{G}} \frac{1}{m} \sum \limits_{i=1}^m \sigma_i g(z_i') \bigg] + \underset{\sigma,S}{\mathbb{E}} \bigg[ \sup \limits_{g\in\mathcal{G}} \frac{1}{m} \sum \limits_{i=1}^m -\sigma_i g(z_i) \bigg] \\
+&= 2 \underset{\sigma,S}{\mathbb{E}} \bigg[ \sup \limits_{g\in\mathcal{G}} \frac{1}{m} \sum \limits_{i=1}^m \sigma_i g(z_i) \bigg] \\
+&= 2 \mathcal{R}_m(\mathcal{G}).
+\end{aligned}
+\]
+
+Now, replacing $\underset{S}{\mathbb{E}} [f(S)]$ with $2 \mathcal{R}_m(\mathcal{G})$, we have:
+\[
+f(S) \leq 2 \mathcal{R}_m(\mathcal{G}) + \sqrt \frac{\log \frac{2}{\delta}}{2m}.
+\]
+
+We chose $f$ to be $\sup \limits_{g\in\mathcal{G}} \bigg( \mathbb{E}[g] - \hat{\mathbb{E}}_S[g] \bigg)$, so:
+
+\[
+\sup \limits_{g\in\mathcal{G}} \bigg( \mathbb{E}[g] - \hat{\mathbb{E}}_S[g] \bigg) \leq 2 \mathcal{R}_m(\mathcal{G}) + \sqrt \frac{\log \frac{2}{\delta}}{2m}.
+\]
+
+$\hat{\mathbb{E}}_S[g] = \frac{1}{m} \sum \limits_{i=1}^m g(z_i)$, so:
+\[
+\mathbb{E} g(z) \leq \frac{1}{m} \sum \limits_{i=1}^m g(z_i) + 2 \mathcal{R}_m(\mathcal{G}) + \sqrt\frac{\log \frac{1}{\delta}}{2m}.
+\]
+
+\end{proof}
+
+\subsubsection*{Proving difference between test and training error bounded above by Rademacher complexity:}
+
+We now have that
+\[
+\begin{aligned}
+\mathbb{E} g(z) \leq \frac{1}{m} \sum \limits_{i=1}^m g(z_i) + 2 \mathcal{R}_m(\mathcal{G}) + \sqrt\frac{\log \frac{1}{\delta}}{2m} \\
+\text{where} \; \mathcal{R}_m(\mathcal{G}) = \frac{1}{m} \mathbb{E} \sup \limits_{g\in\mathcal{G}} \sum \limits_{i=1}^m \xi_i g(z_i).
+\end{aligned}
+\]
+
+Let us now use the above in order to prove that the difference between test and training error is bounded above by Rademacher complexity
+\[
+L(f(\text{x}),y) - \hat L(f(\text{x}),y) \lesssim \frac{1}{m} \mathbb{E} \sup \limits_l \sum\limits_{i=1}^m \xi_i l(f(\text{x}_i),y_i) + \sqrt\frac{\log \frac{2}{s}}{m}.
+\]
+
+\begin{proof}
+
+Choose $g = l(f(\text{x}),y)$.
+
+\[
+\begin{aligned}
+\mathbb{E} l(f(\text{x}),y) &= L(f(\text{x}),y) \\
+L(f(\text{x}),y) &\leq \frac{1}{m} \sum \limits_{i=1}^m l(f(\text{x}_i),y_i) + 2 \mathcal{R}_m(\mathcal{G}) + \sqrt\frac{\log \frac{1}{\delta}}{2m} \\
+L(f(\text{x}),y) &\leq \frac{1}{m} \sum \limits_{i=1}^m l(f(\text{x}_i),y_i) + 2 * \frac{1}{m} \mathbb{E} \sup \limits_{g\in\mathcal{G}} \sum \limits_{i=1}^m \xi_i l(f(\text{x}_i),y_i) + \sqrt\frac{\log \frac{1}{\delta}}{2m} \\
+\hat L(f(\text{x}),y) &= \frac{1}{m}\sum\limits_{i=1}^m l(f(\text{x}_i),y_i) \\
+L(f(\text{x}),y) - \hat L(f(\text{x}),y) &\leq 2 * \frac{1}{m} \mathbb{E} \sup \limits_{g\in\mathcal{G}} \sum \limits_{i=1}^m \xi_i l(f(\text{x}_i),y_i) + \sqrt\frac{\log \frac{1}{\delta}}{2m} \\
+&\lesssim \frac{1}{m} \mathbb{E} \sup \limits_l \sum\limits_{i=1}^m \xi_i l(f(\text{x}_i),y_i) + \sqrt\frac{\log \frac{2}{s}}{m}.
+\end{aligned}
+\]
+
+\end{proof}
+
+\subsection{Rademacher complexity bounded above by (1)}
+
+Now that we know that the difference between test and training error is bounded above by the Rademacher complexity, we can find an upper bound for the Rademacher complexity in order to get the proposed bound $L(f(\text{x}),y) - \hat L(f(\text{x}),y) \lesssim \frac{1}{m} \sum\limits_{j=1}^h \alpha_j (\beta_j \| \text{X} \|_F + \| \text{u}_j^0 \text{X} \|_2) + \sqrt\frac{\log \frac{2}{s}}{m}$.
+
+In other words, if we assume $U_0 = 0$, we essentially need to show that
+\begin{equation}
+\mathbb{E} \sup \limits_l \sum\limits_{i=1}^m \xi_i l(f(\text{x}_i),y_i) \leq \sum\limits_{j=1}^h \alpha_j (\beta_j \| \text{X} \|_F).
+\end{equation}
+
+To do so, we will need to use the fact
+\[
+\begin{aligned}
+\mathcal{R}(\phi \circ f) \leq a \mathcal{R}(f) && \text{if} && \text{Lip}(\phi) \leq a.
+\end{aligned}
+\]
+
+\begin{proof}
+
+Using this fact, we have:
+\[
+\begin{aligned}
+\mathbb{E} \sup \limits_l \sum\limits_{i=1}^m \xi_i l(f(\text{x}_i),y_i) &\leq \mathbb{E} \sup_{V,U} \sum \limits_{i=1}^m \xi_i \sum\limits_{j=1}^h v_j(u_j^T x_i)_+ \\
+&= \mathbb{E} \sup_{V,U} \sum \limits_{i=1}^m \xi_i \sum\limits_{j=1}^h v_j \| u_j \|_2 \frac{(u_j^T x_i)}{\| u_j \|_2}_+ \\
+&= \mathbb{E} \sup_{V,U} \sum \limits_{j=1}^h v_j \| u_j \|_2 \sum \limits_{i=1}^m \xi_i \bigg( \frac{u_j^T}{\| u_j \|_2} x_i \bigg)_+ \\
+&\leq \mathbb{E} \sum \limits_{j=1}^h \alpha_j \beta_j \sup_{u_j} \bigg| \sum \limits_{i=1}^m \xi_i \bigg( \frac{u_j^T}{\| u_j \|_2} x_i \bigg)_+ \bigg| \\
+&\leq \mathbb{E} \sum \limits_{j=1}^h \alpha_j \beta_j \sup_{\| q_j \|_2 \leq 1} \bigg| \sum \limits_{i=1}^m \xi_i (q_j^T x_i)_+ \bigg| \qquad \qquad \text{where} \quad q_j^T= \frac{u_j^T}{\| u_j \|_2} \\
+&= \mathbb{E} \sum \limits_{j=1}^h \alpha_j \beta_j \bigg[ \sup_{\| q_j \|_2 \leq 1} \bigg( \sum \limits_{i=1}^m \xi_i (q_j^T x_i)_+ \bigg) - \inf_{\| q_j \|_2 \leq 1} \bigg( \sum \limits_{i=1}^m \xi_i (q_j^T x_i)_+ \bigg) \bigg] \\
+&= \mathbb{E} \sum \limits_{j=1}^h \alpha_j \beta_j \bigg[ \sup_{\| q_j \|_2 \leq 1} \bigg( \sum \limits_{i=1}^m \xi_i (q_j^T x_i)_+ \bigg) + \sup_{\| q_j \|_2 \leq 1} \bigg( \sum \limits_{i=1}^m (-\xi_i) (q_j^T x_i)_+ \bigg) \bigg] \\
+&= \mathbb{E} \sum \limits_{j=1}^h \alpha_j \beta_j \sup_{\| q_j \|_2 \leq 1} \bigg( \sum \limits_{i=1}^m \xi_i (q_j^T x_i)_+ \bigg) + \mathbb{E} \sum \limits_{j=1}^h \alpha_j \beta_j \sup_{\| q_j \|_2 \leq 1} \bigg( \sum \limits_{i=1}^m (-\xi_i) (q_j^T x_i)_+ \bigg) \\
+&= 2 \mathbb{E} \sum \limits_{j=1}^h \alpha_j \beta_j \sup_{\| q_j \|_2 \leq 1} \sum \limits_{i=1}^m \xi_i (q_j^T x_i)_+.
+\end{aligned}
+\]
+
+From here, we can write:
+\[
+\begin{aligned}
+2 \mathbb{E} \sum \limits_{j=1}^h \alpha_j \beta_j \sup_{\| q_j \|_2 \leq 1} \sum \limits_{i=1}^m \xi_i (q_j^T x_i)_+ &\leq \sum \limits_{j=1}^h \alpha_j \beta_j \mathbb{E} \sup_{\| q_j \|_2 \leq 1} \sum \limits_{i=1}^m \xi_i (q_j^T x_i) \\
+&= \sum \limits_{j=1}^h \alpha_j \beta_j \mathbb{E} \sup_{\| q_j \|_2 \leq 1} q_j^T \sum \limits_{i=1}^m \xi_i x_i.
+\end{aligned}
+\]
+
+Now, we can look at the expectation on the right-hand side and show that it is the Frobenius norm:
+\[
+\begin{aligned}
+\mathbb{E} \sup_{\| q_j \|_2 \leq 1} q_j^T \sum \limits_{i=1}^m \xi_i x_i &= \mathbb{E} \bigg\| \sum \limits_{i=1}^m \xi_i x_i \bigg \|_2 \\
+&\leq \sqrt{\mathbb{E} \bigg\| \sum \limits_{i=1}^m \xi_i x_i \bigg \|_2^2} \\
+&= \| \text{X} \|_F.
+\end{aligned}
+\]
+
+As a result, we have
+\[
+\mathbb{E} \sup \limits_l \sum\limits_{i=1}^m \xi_i l(f(\text{x}_i),y_i) \leq \sum\limits_{j=1}^h \alpha_j \beta_j \| \text{X} \|_F.
+\]
+
+\end{proof}
+
+Hence, we find the overall upper bound to be
+\[
+L(f(\text{x}),y) - \hat L(f(\text{x}),y) \lesssim \frac{1}{m} \sum\limits_{j=1}^h \alpha_j (\beta_j \| \text{X} \|_F + \| \text{u}_j^0 \text{X} \|_2) + \sqrt\frac{\log \frac{2}{s}}{m}.
+\]
+
+\section{Lower Bound}
+
+For the lower bound, the paper finds a lower bound for the Rademacher complexity. 
+
+The lower bound is found to be:
+\begin{equation}
+\frac{1}{m} \mathbb{E} \sup \limits_f \sum\limits_{i=1}^m \xi_i f(x_i) \gtrsim \sum\limits_{j=1}^h \alpha_j \beta_j \| \text{X} \|_F.
+\end{equation}
+
+Recall that we have
+\[
+f_\text{V,U}(\text{x})=\text{V}[\text{Ux}]_+.
+\]
+
+This lower bound is obtained for a smaller parameter space with the specific case when $m = h = d = 2^k$ and $x_i$ is the standard coordinate vector $e_i$ for $i = 1,\ldots,2^k$. We have
+\[
+\begin{aligned}
+V &= (\alpha_1,\ldots,\alpha_{2^k}) \\
+U &= \begin{pmatrix} 
+\beta_1 & & \\
+& \ddots & \\
+& & \beta_{2^k}
+\end{pmatrix}
+A_{2^k \text{x} 2^k}
+\end{aligned}
+\]
+where $A_{2^k \text{x} 2^k}$ is the Hadamard matrix.
+
+The Hadamard matrix is a matrix, the elements of which are all $\pm2^{-k/2}$. All of the columns of the Hadamard matrix are orthogonal and have norm 1, so they form an orthonormal basis of $\mathbb{R}^{2^k}$. Let us denote the $j$th column of $A_{2^k \text{x} 2^k}$ as $a_j$. From this, we see that, as $U$ is given by the columns $a_1,\ldots,a_{2^k}$, we can say $f$ is also given by the columns $a_1,\ldots,a_{2^k}$.
+
+\begin{proof}
+
+To prove the lower bound, with this setup, we have:
+\[
+\begin{aligned}
+f_\text{V,U}(\text{x})&=\text{V}[\text{Ux}]_+ \\
+&= (\alpha_1,\ldots,\alpha_{2^k}) \Bigg( \begin{pmatrix} 
+\beta_1 & & \\
+& \ddots & \\
+& & \beta_{2^k}
+\end{pmatrix}
+(a_1,\ldots,a_{2^k}) e_i \Bigg)_+. \\
+\text{If we let} \ i=1, \text{this becomes} \\
+&= (\alpha_1,\ldots,\alpha_{2^k}) \Bigg( \begin{pmatrix} 
+\beta_1 & & \\
+& \ddots & \\
+& & \beta_{2^k}
+\end{pmatrix}
+a_1 \Bigg)_+ \\
+&= \sum \limits_{j=1}^h \alpha_j \beta_j (a_{1j})_+.
+\end{aligned}
+\]
+
+We can now look at the following:
+\[
+(\alpha_1,\ldots,\alpha_{2^k}) \Bigg( \begin{pmatrix} 
+\beta_1 & & \\
+& \ddots & \\
+& & \beta_{2^k}
+\end{pmatrix}
+a_1 \Bigg)_+ +
+(\alpha_1,\ldots,\alpha_{2^k}) \Bigg( \begin{pmatrix} 
+\beta_1 & & \\
+& \ddots & \\
+& & \beta_{2^k}
+\end{pmatrix}
+{-a}_1 \Bigg)_+
+\]
+\[
+\begin{aligned}
+&= \sum \limits_{j=1}^h \alpha_j \beta_j \bigg[ (a_{1j})_+ + (-a_{1j})_+ \bigg] \\
+&= 2^{-k/2} \sum \limits_{j=1}^h \alpha_j \beta_j.
+\end{aligned}
+\]
+
+From this, we can see that either $\sum \limits_{j=1}^h \alpha_j \beta_j (a_{1j})_+$
+or $\sum \limits_{j=1}^h \alpha_j \beta_j (-a_{1j})_+$ is greater than $2^{-k/2-1} \sum \limits_{j=1}^h \alpha_j \beta_j$.
+
+Now, let us pick a new $A^* = (a_1^*,\ldots,a_{2^k}^*)$ for which
+\[
+a_i^* = \begin{cases}
+a_i & \text{if} \ \sum \limits_{j=1}^h \alpha_j \beta_j (a_{1j})_+ \geq 2^{-k/2-1} \sum \limits_{j=1}^h \alpha_j \beta_j \\
+-a_i & \text{if} \ \sum \limits_{j=1}^h \alpha_j \beta_j (-a_{1j})_+ \geq 2^{-k/2-1} \sum \limits_{j=1}^h \alpha_j \beta_j.
+\end{cases}
+\]
+
+Now, with Rademacher complexity, when $\xi_i$ is fixed, we can choose a new matrix $\widetilde{A}$ with columns $\tilde{a}_1,\ldots,\tilde{a}_{2^k}$ to be used in a new function
+\[
+\tilde{f}_\text{V,U}(\text{x})=\text{V}[\widetilde{\text{U}}\text{x}]_+
+\]
+where
+\[
+\widetilde{U} = \begin{pmatrix} 
+\beta_1 & & \\
+& \ddots & \\
+& & \beta_{2^k}
+\end{pmatrix}
+\widetilde{A}_{2^k \text{x} 2^k} 
+\]
+such that
+\[
+\tilde{a_i} = \begin{cases}
+a_i^* & \text{if} \ \xi_i > 0 \\
+0 & \text{if} \ \xi_i \leq 0.
+\end{cases}
+\]
+
+From here, we have that
+\[
+\begin{aligned}
+\xi_i \tilde{f}(x_i) &= \xi_i \tilde{f}(e_i) \\
+&= \xi_i (\alpha_1,\ldots,\alpha_{2^k}) \Bigg( \begin{pmatrix} 
+\beta_1 & & \\
+& \ddots & \\
+& & \beta_{2^k}
+\end{pmatrix}
+\widetilde{A}_{2^k \text{x} 2^k} e_i \Bigg)_+ \\
+&= \xi_i \sum \limits_{j=1}^h \alpha_j \beta_j (\tilde{a_{ij}})_+ \\
+&= \begin{cases}
+\sum \limits_{j=1}^h \alpha_j \beta_j (a_{ij}^*)_+ & \text{when} \ \xi_i > 0, \ \text{which has probability} \ \frac{1}{2} \ \text{by Rademacher} \\
+0 & \text{when} \ \xi_i \leq 0, \ \text{which has probability} \ \frac{1}{2} \ \text{by Rademacher}.
+\end{cases}
+\end{aligned}
+\]
+
+Now, we can show:
+\[
+\begin{aligned}
+\mathbb{E} \sup \limits_f \sum\limits_{i=1}^m \xi_i f(x_i) &\geq \mathbb{E} \sum \limits_{i=1}^m \xi_i \tilde{f}(x_i) \\
+&= \sum \limits_{i=1}^m \mathbb{E} \xi_i \tilde{f}(x_i) \\
+&= \sum \limits_{i=1}^m \bigg( \frac{1}{2}*0 + \frac{1}{2} * \sum \limits_{j=1}^h \alpha_j \beta_j (a_{ij}^*)_+ \bigg) \\
+&= \frac{1}{2} \sum \limits_{i=1}^m \sum \limits_{j=1}^h \alpha_j \beta_j (a_{ij}^*)_+ \\
+&\geq \frac{1}{2} \sum \limits_{i=1}^m 2^{-k/2 - 1} \sum \limits_{j=1}^h \alpha_j \beta_j \\
+&= 2^{-k/2-2} m \sum \limits_{j=1}^h \alpha_j \beta_j \\
+&= 2^{-2} m \sum \limits_{j=1}^h \alpha_j \beta_j 2^{-k/2} \qquad \text{(Note that} \ 2^{-k/2} = \frac{\| \text{X} \|_F}{m}.) \\
+&= \frac{1}{4} m \sum \limits_{j=1}^h \alpha_j \beta_j \frac{\| \text{X} \|_F}{m} \\
+&= \frac{1}{4} \sum \limits_{j=1}^h \alpha_j \beta_j \| \text{X} \|_F.
+\end{aligned}
+\]
+
+As a result, we have
+\[
+\frac{1}{m} \mathbb{E} \sup \limits_f \sum\limits_{i=1}^m \xi_i f(x_i) \gtrsim \sum\limits_{j=1}^h \alpha_j \beta_j \| \text{X} \|_F.
+\]
+
+\end{proof}
+
+Overall, we have an upper bound
+\[
+L(f(\text{x}),y) - \hat L(f(\text{x}),y) \lesssim \frac{1}{m} \sum\limits_{j=1}^h \alpha_j (\beta_j \| \text{X} \|_F + \| \text{u}_j^0 \text{X} \|_2) + \sqrt\frac{\log \frac{2}{s}}{m}
+\]
+
+and a lower bound (for the Rademacher complexity)
+\[
+\frac{1}{m} \mathbb{E} \sup \limits_f \sum\limits_{i=1}^m \xi_i f(x_i) \gtrsim \sum\limits_{j=1}^h \alpha_j \beta_j \| \text{X} \|_F.
+\]
+
+We can also see that we have matching upper and lower bounds for the Rademacher complexity.
+
+\nocite{*}
+\bibliographystyle{plain}
+\bibliography{bibliography}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
