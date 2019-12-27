@@ -1,0 +1,375 @@
+\documentclass[twoside]{article}
+
+\usepackage{amsmath,amsthm,amssymb,epsfig}
+
+\theoremstyle{definition}
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem{cor}[thm]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem*{defn}{Definition}
+\newtheorem*{exmp}{Example}
+\newtheorem*{problem}{Problem}
+\newtheorem*{claim}{Claim}
+
+\theoremstyle{remark}
+\newtheorem*{rem}{Remark}
+\newtheorem*{note}{Note}
+\newtheorem*{exer}{Exercise}
+
+\setlength{\oddsidemargin}{0.25 in}
+\setlength{\evensidemargin}{-0.25 in}
+\setlength{\topmargin}{-0.6 in}
+\setlength{\textwidth}{6.5 in}
+\setlength{\textheight}{8.5 in}
+\setlength{\headsep}{0.75 in}
+\setlength{\parindent}{0 in}
+\setlength{\parskip}{0.1 in}
+
+\DeclareMathOperator{\var}{var}
+\newcommand{\widgraph}[2]{\includegraphics[keepaspectratio,width=#1]{#2}}
+\newcommand{\widgraphr}[3]{\includegraphics[keepaspectratio,width=#1,angle=#3]{#2}}
+
+\newcommand{\lecture}[4]{
+   \pagestyle{myheadings}
+   \thispagestyle{plain}
+   \newpage
+   \setcounter{page}{1}
+   \noindent
+   \begin{center}
+   \framebox{
+      \vbox{\vspace{2mm}
+    \hbox to 6.28in { {\bf S\&DS 411 (Fall 2019) Selected Topics in Statistical Decision Theory \hfill Lecture: 2} }
+       \vspace{6mm}
+       \hbox to 6.28in { {\hfill #1  \hfill} }
+       \vspace{6mm}
+       \hbox to 6.28in { {\it Lecturer: #2 \hfill Scribe: #3} }
+      \vspace{2mm}}
+   }
+   \end{center}
+   \markboth{#1}{#1}
+   \vspace*{4mm}
+}
+
+
+%%%%%%%
+% Some commonly used notation
+%%%%%%%
+
+\def\R{{\mathbb R}}
+\def\X{{\mathcal X}}
+\def\Y{{\mathcal Y}}
+\def\E{{\mathbb E}}
+\def\sign{{\rm sign}}
+\newcommand{\prob}{\ensuremath{\mathbb{P}}}
+
+\newcommand{\percent}{$\%$}
+
+\begin{document}
+
+
+%% SOME RULES
+%% - only use pdfLaTeX to compile!!
+%% - for aligned equations, use align, do NOT use eqnarray
+%% - for unreferenced displayed math, use \[\] and do not number them
+%% - for labeling, use the following convention
+%%          theorem: 			\label{thm:fermat}
+%%          definition: 	\label{def:entropy}
+%%          lemma: 				\label{lmm:fermat}
+%%          proposition: 	\label{prop:fermat}, etc
+
+ 
+%% lecture starts below
+%% 1. title (short summary of the content)
+%% 2. lecturer name
+%% 3. scribe name (that is you) and date of lecture
+%% 4. lecture number (also name the file accordingly like lec01.tex)
+\lecture{Nonparametric Estimation}{Harrison Zhou}{Cynthia Yue, Sep 4, 2019}{7}
+%%%%%%%%%%%%%%%%%%%%%%%%%scribe^name^here%%^lecture number
+
+\section{Nonparametric Estimation}
+
+For nonparametric estimation, let us consider the following model, where $Z_{i} \sim \mathcal{N}(0, 1)$ and $i=1, 2, \ldots$ :
+\[
+Y_{i} = \theta_{i} + \frac{1}{\sqrt{n}} Z_{i}.
+\]
+
+The parameter space is a Sobolev ball with smoothness $\alpha$:
+\[
+\theta \in \Theta = \{ \theta: \sum \limits_{i=1}^\infty i^{2\alpha} \theta_{i}^{2} \leq M \}.
+\]
+
+Our goal is to estimate $\theta$, or, in other words, to find $\hat\theta$ to minimize the worst risk $\sup \limits_{\theta \in \Theta} \mathbb{E} \| \hat\theta - \theta \|$.
+
+\begin{rem}
+We can think of the risk as $\mathbb{E} \int (\hat f - f)^2 dx = \mathbb{E} \sum \limits_{i=1}^{\infty} (\hat\theta_i - \theta_i)^2$. This is often called the minimax criterion. The idea is that if we can estimate $\theta$, we can estimate $f$ well.
+\end{rem}
+
+At a first glance, we may think that this is a ridiculous model and parameter space, so let us first look at the motivations for using this model and parameter space.
+
+\section{Motivations}
+
+\subsection{Fourier Basis}
+
+The following motivates the parameter space.
+
+We often have the following assumption for our function $f$, where often $\alpha=1$ or $2$:
+\[
+f \in \int \limits_0^1 (f^{(\alpha)} (x))^2 \leq M'.
+\]
+
+Fourier basis:
+\[
+\begin{aligned}
+\varphi_1(x) &= 1_{[0,1]}(x) \\
+\varphi_{2i}(x) &= \cos(2 \pi ix) & i=1, 2, \ldots \\
+\varphi_{2i+1} (x) &= \sin(2 \pi ix).
+\end{aligned}
+\]
+
+We can determine these are orthonormal bases, so we can expand our function $f(x)$ into this Fourier basis in order to have
+\[
+f(x) = <f, \varphi_1> \varphi_1(x) + <f, \varphi_2> \varphi_2(x) + <f, \varphi_3> \varphi_3(x) + \ldots
+\]
+where we can think of $<f, \varphi_1>$ as $\theta_1$, $<f ,\varphi_2>$ as $\theta_2$, $<f, \varphi_3>$ as $\theta_3$, and so on and so forth.
+
+Let us consider the simple case when $\alpha=2$:
+\[
+\begin{aligned}
+f^{(2)}(x) &= <f, \varphi_2> (2\pi i)^2 (-\varphi_2(x)) + <f, \varphi_3> (2\pi i)^2 (-\varphi_3(x)) + \ldots \\
+\int \limits_0^1 (f^{(2)}(x))^2 dx &= \sum \limits_{i=1}^\infty (\theta_{2i}^2 + \theta_{2i+1}^2) (2\pi i)^4 \\
+&\leq M'.
+\end{aligned}
+\]
+
+\subsection{Nonparametric Regression}
+
+With nonparametric regression, we have
+\[
+Y_i = f \bigg( \frac{1}{n} \bigg) + Z_i \quad \text{where} \ Z_i \sim \mathcal{N}(0, 1) \ \text{and} \ i=1, \ldots, \, n.
+\]
+
+How do we recover this function $f$? We can write $Y_i$ as a vector and multiply both sides by $\frac{1}{\sqrt{n}}:$
+
+\[
+\frac{1}{\sqrt{n}} \left(\begin{smallmatrix} \vdots \\Y_i \\ \vdots \end{smallmatrix}\right) = \frac{1}{\sqrt{n}} \left(\begin{smallmatrix} \vdots \\ f(\frac{i}{n}) \\ \vdots \end{smallmatrix}\right) + \frac{1}{\sqrt{n}} \left(\begin{smallmatrix} \vdots \\Z_i \\ \vdots \end{smallmatrix}\right)
+\]
+
+where $Z_i \sim \mathcal{N}(0,1) \ \text{i.i.d.}$ and $i=1, \ldots n$.
+
+\begin{rem}
+\[
+\sum \limits_{i=1}^n \bigg( \frac{1}{\sqrt{n}} f \bigg( \frac{i}{n} \bigg) \bigg)^2 = \frac{1}{n} \sum \limits_{i=1}^n f^2 \bigg( \frac{i}{n} \bigg) \approx f^2(x)dx.
+\]
+
+Then, multiply both sides by an isonormal matrix (discrete Fourier transformation):
+
+\[
+\begin{aligned}
+A_{n\times n} \frac{1}{\sqrt{n}} \left(\begin{smallmatrix} \vdots \\Y_i \\ \vdots \end{smallmatrix}\right) &= A_{n\times n} \frac{1}{\sqrt{n}} \left(\begin{smallmatrix} \vdots \\ f(\frac{i}{n}) \\ \vdots \end{smallmatrix}\right) + A_{n\times n} \frac{1}{\sqrt{n}} \left(\begin{smallmatrix} \vdots \\Z_i \\ \vdots \end{smallmatrix}\right) \\
+A \frac{1}{\sqrt{n}} \left(\begin{smallmatrix} f(\frac{1}{n}) \\ \vdots \\ f(\frac{n}{n}) \end{smallmatrix}\right) &= \left(\begin{smallmatrix} \widetilde{\theta_1} \\ \vdots \\ \widetilde{\theta_n} \end{smallmatrix}\right) \approx \left(\begin{smallmatrix} \theta_1 \\ \vdots \\ \theta_n \end{smallmatrix}\right).
+\end{aligned}
+\]
+\end{rem}
+
+\subsection{Nonparametric Density Estimation}
+
+We often assume
+\[Y_1, \ldots, Y_n \ \text{i.i.d. density} \ f.\]
+We also assume $f$ belongs to the space
+\[
+f \in \{ f: \int \limits_0^1 (f^{(\alpha)}(x))^2 dx \leq M \}.
+\]
+
+Our goal is to estimate $f$. We expand $f$ by the Fourier basis:
+
+\[
+f(x) = \sum \limits_i^\infty <f, \varphi_i> \varphi_i(x)
+\]
+where $<f, \varphi_i> = \theta_i = \int \limits_0^1 f(x) \varphi (x)dx$.
+
+\[
+\begin{aligned}
+\theta_i &= \int \limits_0^1 f(x) \varphi_i (x) dx \\
+&= \mathbb{E} \varphi_i (Y_1) \\
+\hat\theta_i &= \frac{1}{n} \sum \limits_{j=1}^n \varphi_i (Y_j) \\
+&\approx \mathcal{N} (\theta_i, \frac{1}{n} C_i) & \text{where} \ C_i = \text{Var}(\varphi_i (Y_i)).
+\end{aligned}
+\]
+
+\section{Estimation}
+
+\subsection{Minimax Rate}
+
+\subsubsection{Upper bound}
+
+One way to estimate is to truncate somewhere:
+\[
+\hat\theta_i = \begin{cases}
+Y_i &  i \leq I \\
+0 & i > I.
+\end{cases}
+\]
+
+\[
+\begin{aligned}
+\mathbb{E} \| \hat\theta - \theta \|^2 &= \mathbb{E} \sum \limits_{i=1}^I (Y_i - \theta_i)^2 + \mathbb{E} \sum_{i \geq I+1} (0 - \theta_i)^2 \\
+&= \frac{I}{n} + \sum_{i \geq I+1} \theta_i^2 & \text{Note: From the parameter space, we have} \sum_{i \geq I+1} i^{2\alpha} \theta_i^2 \leq M, \\
+& & \text{so} \ (I+1)^{2\alpha} \sum_{i \geq I+1} \theta_i^2 \leq M. \\
+&\leq \frac{I}{n} + \frac{M}{(I+1)^2} \\
+&\leq \frac{I}{n} + \frac{M}{I^{2\alpha}}.
+\end{aligned}
+\]
+
+Here, $\frac{I}{n}$ is variance, and $\frac{M}{I^{2\alpha}}$ is bias. If we set $\frac{I}{n}$ equal to $\frac{M}{I^{2\alpha}}$, we have
+\[
+\begin{aligned}
+\frac{I}{n} &= \frac{M}{I^{2\alpha}} \\
+I^{1+2\alpha} &= nM \\
+I &= (nM)^{\frac{1}{1+2\alpha}}.
+\end{aligned}
+\]
+
+Returning to our above statement, we then have
+\[
+\begin{aligned}
+\mathbb{E} \| \hat\theta - \theta \|^2  &\leq \frac{I}{n} + \frac{M}{I^{2\alpha}} \\
+&= 2 \frac{(nM)^{\frac{1}{1 + 2\alpha}}}{n} \\
+&= 2 M^{\frac{1}{1+2\alpha}} n^{-\frac{2\alpha}{2\alpha+1}}.
+\end{aligned}
+\]
+
+This is our rate of convergence for the risk. This rate appears in literature very often.
+
+Some questions to start considering are: \\ Q: Can we get a better rate? \\ Q: What if we don't know $\alpha$ and $M$.
+
+\subsubsection{Lower bound}
+
+For the lower bound, we have Le Cam's two point argument.
+
+We want to show:
+\[
+\inf \limits_{\hat\theta} \sup \limits_{\theta \in \Theta} \mathbb{E} \| \hat\theta - \theta \|^2 \geq c M^{\frac{1}{1+2\alpha}} n^{-\frac{2\alpha}{2\alpha+1}}.
+\]
+
+For any $\hat\theta$, the worst risk is always bounded by the average: 
+\[
+\begin{aligned}
+\sup \limits_{\theta} \mathbb{E}_{x|\theta} \| \hat\theta - \theta \|^2 &\geq \mathbb{E}_{\theta} \mathbb{E}_{x|\theta} \| \hat\theta - \theta \|^2 \quad \text{where} \ \theta \sim \pi \ \text{supported on} \ \Theta \\
+&\geq \mathbb{E}_\theta \mathbb{E}_{x|\theta} \| \hat\theta_{Bayes} - \theta \|^2 \\
+&\geq c M^{\frac{1}{1+2\alpha}} n^{-\frac{2\alpha}{2\alpha+1}}.
+\end{aligned}.
+\] 
+
+Getting a good prior is key to getting a good lower bound:
+
+Construction of prior $\pi$:
+\begin{itemize}
+\item $\theta_i$ i.i.d. $= \begin{cases}
+\frac{1}{\sqrt(n)} & \text{with probability} \ \frac{1}{2} \quad \quad i \leq I \\
+0 & \frac{1}{2}.
+\end{cases}$
+\item $\theta_i = 0 \quad \quad i \geq I+1$.
+\end{itemize}
+
+Is the prior supported on the parameter space? To do this, we need to check the following:
+
+\[
+\sum \limits_{i=1}^\infty i^{2\alpha} \theta_i^2 \leq M \impliedby \sum \limits_{i=1}^I i^{2\alpha} ( \frac{1}{\sqrt{n}})^2 \leq M.
+\]
+
+Note that 
+\[
+\begin{aligned}
+i &\leq I \\
+I^{2\alpha} \frac{I}{n} &= \frac{I^{1+2\alpha}}{n} \\
+&\leq M.
+\end{aligned}
+\].
+
+Now, let us follow the Bayes procedure:
+
+\[
+\begin{aligned}
+\hat\theta_{Bayes, i} &= \mathbb{E}(\theta_i | Y) = \mathbb{E} (\theta_i | Y_i) \\
+\mathbb{E}_\theta \mathbb{E}_{Y|\theta} \| \hat\theta_{Bayes} - \theta \|^2 &= \sum \limits_{i=1}^\infty \mathbb{E}_{\theta_i} \mathbb{E}_{Y_i | \theta_i} (\hat\theta_{Bayes, i} (Y_i) - \theta_i)^2 \\
+&\geq \sum \limits_{i=1}^I \Bigg\{ \frac{1}{2} \mathbb{E}_{Y_i | \theta_i = \frac{1}{\sqrt{n}}} \Bigg( \hat\theta_{Bayes} (Y_i) - \frac{1}{\sqrt{n}} \Bigg)^2 + \frac{1}{2} \mathbb{E}_{Y_i | \theta_i = 0} \Bigg( \hat\theta_{Bayes} (Y_i) - 0 \Bigg) ^2 \Bigg\} \\
+&= \sum \limits_{i=1}^I \bigg\{ \frac{1}{2} \int \Bigg( \hat\theta_{Bayes, i} (Y_i) - \frac{1}{\sqrt{n}} \Bigg) ^2 \frac{1}{\sqrt{2\pi} \frac{1}{\sqrt{n}}} \mathrm{e}^{-\frac{(Y_i - \frac{1}{\sqrt{n}})^2}{2 \frac{1}{n}}} \\ & \quad \quad + \frac{1}{2} \int \Bigg( \hat\theta_{Bayes, i} (Y_i) - 0 \Bigg)^2 \frac{1}{\sqrt{2\pi}} \mathrm{e}^-\frac{Y_i^2}{2 \frac{1}{n}} \Bigg\} \\
+&\geq \sum \limits_{i=1}^I \Bigg\{ \frac{1}{2} \int \Bigg[ \Bigg( \hat\theta_{Bayes, i} (Y_i) - \frac{1}{\sqrt{n}} \Bigg)^2 + \Bigg( \hat\theta_{Bayes, i} (Y_i) - 0 \Bigg)^2 \Bigg] \\ & \quad \quad \min \Bigg\{ \frac{1}{\sqrt{2\pi} \frac{1}{\sqrt{n}}} \mathrm{e}^{-\frac{(Y_i - \frac{1}{\sqrt{n}})^2}{2 \frac{1}{n}}}, \frac{1}{\sqrt{2\pi} \frac{1}{\sqrt{n}}} \mathrm{e}^{-\frac{Y_i^2}{2 \frac{1}{n}}} \Bigg\} \Bigg\} \\
+&\geq \frac{I}{4n} \underbrace{\int \min \Bigg\{ \frac{1}{\sqrt{2\pi} \frac{1}{\sqrt{n}}} \mathrm{e}^{-\frac{(x - \frac{1}{\sqrt{n}})^2}{2 \frac{1}{n}}}, \frac{1}{\sqrt{2n} \frac{1}{\sqrt{n}}} \mathrm{e}^{-\frac{x^{2}n}{2 \frac{1}{n}}} \Bigg\} dx}_{\geq c' \ \text{(this is bounded by some constant c')}}\quad \text{where} \ \underbrace{x = \frac{1}{\sqrt{n}}Y}_{\substack{\text{change of variables} \\ \text{so that this becomes} \\ \text{standard normal}}}\\
+&= \frac{1}{4} M^{\frac{1}{1+2\alpha}} n^{-\frac{2\alpha}{2\alpha+1}}.
+\end{aligned}
+\]
+
+We now consider the questions: \\ Q: We don't know $\alpha$ and $M$, so can we adapt the procedure to pretend we know $M$ and $\alpha$. Can we find a procedure that is adaptive to $M$ and $\alpha$? \\ Q: Going beyond weights $\{ 0, 1 \}$
+
+\subsection{Best Linear Estimator}
+
+We consider the model
+\[
+Y_{i} = \theta_{i} + \frac{1}{\sqrt{n}} Z_{i} \quad \text{where} \ i=1, 2, \ldots
+\]
+
+\begin{claim}
+\[
+\begin{aligned}
+\inf \limits_{c_i \in [0, 1]} \sup \limits_{\theta \in \Theta} \mathbb{E} \sum \limits_{i=1}^\infty (c_i Y_i - \theta_i)^2 &\leq (1+ O(1)) P_\alpha M^{\frac{1}{1+2\alpha}} n^{-\frac{2\alpha}{2\alpha + 1}} \quad \text{where} \ P_\alpha \ \text{is the Pinsker constant} \\
+\inf \limits_{\hat\theta} \sup \limits_{\theta \in \Theta} \mathbb{E} \sum \limits_{i=1}^\infty (\hat\theta_i - \theta_i)^2 &\geq (1+O(1)) P_\alpha M^{\frac{1}{1+2\alpha}} n^{-\frac{2\alpha}{2\alpha + 1}}.
+\end{aligned} 
+\]
+
+If we use the truncated Gaussian, we can show the lower bound. We can use the linear procedure to get the prior.
+
+\end{claim}
+
+\subsection{Adaptive Estimation}
+
+We have James-Stein estimation:
+
+\[
+\begin{aligned}
+X &= \theta + Z \quad \text{where} \ Z \sim \mathcal{N}(0, \sigma^2 I_d). \\
+\mathbb{E} \| X - \theta \|^2 &= d\sigma^2. \quad \quad \quad \mathbb{E} \| X \|^2 = d + \| \theta \|^2. \\
+\hat\theta_{JS} &= \Bigg( 1 - \frac{(d-2) \sigma^2}{\| X \|^2} \Bigg) X.
+\end{aligned}
+\]
+
+\begin{claim}
+\[
+\mathbb{E} \| \hat\theta_{JS} - \theta \|^2 \leq 2 + \inf \limits_{c \in [0, 1]} \mathbb{E} \| cY - \theta \|^2.
+\]
+\end{claim}
+
+For our adaptive procedure, we have blockwise James-Stein estimation $\hat\theta_{BJS}$:
+\[
+\begin{aligned}
+\theta_i, \theta_2, \theta_3, \theta_4, \theta_5, \theta_6, \theta_7, \ldots, \theta_{14} \\
+\underbrace{Y_i, Y_2}_\text{2}, \underbrace{Y_3, Y_4, Y_5, Y_6}_\text{4}, \underbrace{Y_7, \ldots, Y_{14}}_\text{8}
+\end{aligned}
+\]
+
+When $\hat\theta_i = 0$ and $i \geq n$, we have
+\[
+\begin{aligned}
+\sum \limits_{i \geq n}^\infty \mathbb{E} (0 - \theta_i)^2 = \sum \limits_{i \geq n} \theta_i^2 &\leq \frac{M}{n^{2\alpha}} \\
+&= O(n^{-\frac{2\alpha}{2\alpha + 1}}).
+\end{aligned}
+\]
+
+We will show that
+\[
+\mathbb{E} \| \hat\theta_{BJS} - \theta \|^2 \leq c_1 M^{\frac{1}{1+2\alpha}} n^{-\frac{2\alpha}{2\alpha + 1}}.
+\]
+
+\nocite{*}
+\bibliographystyle{plain}
+\bibliography{bibliography}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
